@@ -14,8 +14,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+
+// Variables to store the default camera position and target
+const defaultCameraPosition = new THREE.Vector3(2, 2, 2);
+const defaultCameraTarget = new THREE.Vector3(0, 0, 0);
+
+// Camera movement variables
+let isCameraMoving = false;
+let cameraStartPosition = new THREE.Vector3();
+let cameraTargetPosition = new THREE.Vector3();
+let cameraStartLookAt = new THREE.Vector3();
+let cameraTargetLookAt = new THREE.Vector3();
+let cameraMoveStartTime = 0;
+let cameraMoveDuration = 2000; // Duration of the camera move in milliseconds
+
 // Constants
 let speedMultiplier = 0.1;
+
+// Variable to store the previous speed multiplier
+let previousSpeedMultiplier = speedMultiplier;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000011);
@@ -200,7 +217,7 @@ function createAsteroidBelt() {
         asteroidBelt.add(asteroid);
     }
 }
-const sunLight = new THREE.PointLight(0xffffff, 4, 500000, 0.5);
+const sunLight = new THREE.PointLight(0xffffff, 4, 500000, 0);
 sunLight.position.set(0, 0, 0);
 sunLight.castShadow = true; // Enable shadow casting
 scene.add(sunLight);
@@ -212,7 +229,7 @@ function createKuiperBelt() {
     const beltInnerRadius = 45; // Just beyond Neptune's orbit (30 AU)
     const beltOuterRadius = 50; // Up to 50 AU from the Sun
 
-    const kuiperBeltMaterial = new THREE.MeshStandardMaterial({ map: asteroidTexture,  roughness:1,metalness: 0.7 });
+    const kuiperBeltMaterial = new THREE.MeshStandardMaterial({ map: asteroidTexture, color: 0xCDCDCD, roughness:1,metalness: 1 });
 
     for (let i = 0; i < kuiperBeltCount; i++) {
         const kuiperObjectGeometry = new THREE.SphereGeometry(THREE.MathUtils.randFloat(1,3) * sizeMultiplier, 8, 8);
@@ -248,7 +265,7 @@ createKuiperBelt();
 function createOortCloud() {
     const particleCount = 10000; // Adjust for performance
     const innerRadius = 200; // Just beyond Pluto
-    const outerRadius = 300; // Scale as needed
+    const outerRadius = 250; // Scale as needed
 
     const positions = [];
 
@@ -291,69 +308,80 @@ function animate() {
   requestAnimationFrame(animate);
 
   const currentFrameTime = performance.now();
-    const deltaTime = currentFrameTime - lastFrameTime; // in milliseconds
-    lastFrameTime = currentFrameTime;
+  const deltaTime = currentFrameTime - lastFrameTime; // in milliseconds
+  lastFrameTime = currentFrameTime;
 
+  // Update simulation time only if not paused
+  if (speedMultiplier !== 0) {
     // Update simulation time
-    // At speedMultiplier = 1, simulation advances 1 day per real second
     const millisecondsPerDay = 13000000000; // Number of milliseconds in a day
     const simulationMillisecondsPerRealMillisecond = speedMultiplier * millisecondsPerDay / 1000; // ms/ms
-
     const simulationTimeElapsed = deltaTime * simulationMillisecondsPerRealMillisecond; // in milliseconds
-
-    // Update the simulation date
     simulationCurrentDate.setTime(simulationCurrentDate.getTime() + simulationTimeElapsed);
-
-    // Update the date display
     dateDiv.textContent = simulationCurrentDate.toLocaleString();
 
-  // Rotate planets
-  planets.forEach((p) => {
-    p.angle += p.speed * speedMultiplier;
-    p.planet.position.set(
-      Math.cos(p.angle) * p.distance,
-      0,
-      Math.sin(p.angle) * p.distance
-    );
-    p.planet.rotation.y += p.rotationSpeed * speedMultiplier;
-  });
+    // Rotate planets
+    planets.forEach((p) => {
+      p.angle += p.speed * speedMultiplier;
+      p.planet.position.set(
+        Math.cos(p.angle) * p.distance,
+        0,
+        Math.sin(p.angle) * p.distance
+      );
+      p.planet.rotation.y += p.rotationSpeed * speedMultiplier;
+    });
 
-  // Update asteroid belt
-  asteroidBelt.children.forEach((asteroid) => {
-    asteroid.userData.angle += asteroid.userData.speed * speedMultiplier;
-    asteroid.position.set(
-      Math.cos(asteroid.userData.angle) * asteroid.userData.distance,
-      asteroid.position.y, // Keep the original height
-      Math.sin(asteroid.userData.angle) * asteroid.userData.distance
-    );
-  });
+    // Update asteroid belt
+    asteroidBelt.children.forEach((asteroid) => {
+      asteroid.userData.angle += asteroid.userData.speed * speedMultiplier;
+      asteroid.position.set(
+        Math.cos(asteroid.userData.angle) * asteroid.userData.distance,
+        asteroid.position.y, // Keep the original height
+        Math.sin(asteroid.userData.angle) * asteroid.userData.distance
+      );
+    });
+  }
+
+  // Handle camera movement
+  if (isCameraMoving) {
+    controls.enabled = false;
+
+    const elapsed = currentFrameTime - cameraMoveStartTime;
+    const progress = Math.min(elapsed / cameraMoveDuration, 1); // Clamp progress to [0,1]
+
+    // Interpolate camera position and controls.target
+    camera.position.lerpVectors(cameraStartPosition, cameraTargetPosition, progress);
+    controls.target.lerpVectors(cameraStartLookAt, cameraTargetLookAt, progress);
+
+    if (progress >= 1) {
+      isCameraMoving = false;
+      controls.enabled = true;
+    }
+  }
 
   // Update labels' positions
   labels.forEach((l) => {
     const vector = new THREE.Vector3();
     l.planet.getWorldPosition(vector);
-
-    // Project the position to normalized device coordinates (NDC)
     vector.project(camera);
-
-    // Convert the NDC to screen coordinates
     const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
     const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
-
-    // Adjust the label's position in screen space
     const labelWidth = l.labelDiv.clientWidth;
     const labelHeight = l.labelDiv.clientHeight;
-    l.labelDiv.style.left = `${x - labelWidth / 2}px`; // Center the label horizontally
-    l.labelDiv.style.top = `${y - labelHeight - 10}px`; // Position above the planet
+    l.labelDiv.style.left = `${x - labelWidth / 2}px`;
+    l.labelDiv.style.top = `${y - labelHeight - 10}px`;
   });
 
   // Rotate the sun
-  sun.rotation.y += 0.002 * speedMultiplier;
+  if (speedMultiplier !== 0) {
+    sun.rotation.y += 0.002 * speedMultiplier;
+  }
 
   controls.update();
 
   renderer.render(scene, camera);
 }
+
 
 // Event listener to toggle orbit visibility
 document.getElementById("toggleOrbits").addEventListener("click", () => {
@@ -454,8 +482,33 @@ function onClick(event) {
     const clickedPlanet = intersects[0].object;
     const planetData = clickedPlanet.userData;
     showPopup(planetData);
+
+    // Pause the simulation
+    previousSpeedMultiplier = speedMultiplier; // Store the current speed
+    speedMultiplier = 0;
+
+    // Start camera movement
+    isCameraMoving = true;
+    cameraMoveStartTime = performance.now();
+
+    // Record starting positions
+    cameraStartPosition.copy(camera.position);
+    defaultCameraPosition.copy(camera.position);
+    cameraStartLookAt.copy(controls.target);
+
+    // Compute target positions
+    const planetPosition = new THREE.Vector3();
+    clickedPlanet.getWorldPosition(planetPosition);
+
+    cameraTargetLookAt.copy(planetPosition);
+
+    // Set camera target position to some offset from the planet
+    const offset = new THREE.Vector3(0, 2 * planetData.size * sizeMultiplier, 5 * planetData.size * sizeMultiplier);
+    cameraTargetPosition.copy(planetPosition).add(offset);
   }
 }
+
+
 
 function showPopup(data) {
   // If there's already a popup open, remove it
@@ -524,7 +577,22 @@ function showPopup(data) {
   closeButton.addEventListener("click", () => {
     document.body.removeChild(popup);
     currentPopup = null; // Reset the currentPopup variable
+  
+    // Resume the simulation
+    speedMultiplier = previousSpeedMultiplier || 0.1;
+  
+    // Reset camera position
+    isCameraMoving = true;
+    cameraMoveStartTime = performance.now();
+  
+    // Set up camera movement back to the default position
+    cameraStartPosition.copy(camera.position);
+    cameraStartLookAt.copy(controls.target);
+  
+    cameraTargetPosition.copy(defaultCameraPosition);
+    cameraTargetLookAt.copy(defaultCameraTarget);
   });
+  
 
   popup.appendChild(closeButton);
 
