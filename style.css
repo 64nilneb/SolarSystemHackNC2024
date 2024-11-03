@@ -1,0 +1,316 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    font-family: Michroma;
+}
+
+canvas {
+    display: block;
+}
+
+#toggleOrbits {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+#toggleOrbits {
+    display: none;
+}
+
+#slider {
+    display: none;
+}
+
+.button {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    background: none;
+    color: #0f1923;
+    cursor: pointer;
+    position: relative;
+    padding: 8px;
+    width: 400px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 32px;
+    transition: all .15s ease;
+}
+
+.button::before,
+.button::after {
+    content: '';
+    display: block;
+    position: absolute;
+    right: 0;
+    left: 0;
+    height: calc(50% - 5px);
+    border: 1px solid #7D8082;
+    transition: all .15s ease;
+}
+
+.button::before {
+top: 0;
+    border-bottom-width: 0;
+}
+
+.button::after {
+    bottom: 0;
+    border-top-width: 0;
+}
+
+.button:active,
+.button:focus {
+    outline: none;
+}
+
+.button:active::before,
+.button:active::after {
+    right: 3px;
+    left: 3px;
+}
+
+.button:active::before {
+    top: 3px;
+}
+
+.button:active::after {
+    bottom: 3px;
+}
+
+.button_lg {
+    position: relative;
+    display: block;
+    padding: 10px 20px;
+    color: #fff;
+    background-color: #0f1923;
+    overflow: hidden;
+    box-shadow: inset 0px 0px 0px 1px transparent;
+}
+
+.button_lg::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 2px;
+    background-color: #0f1923;
+}
+
+.button_lg::after {
+    content: '';
+    display: block;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    height: 4px;
+    background-color: #0f1923;
+    transition: all .2s ease;
+}
+
+.button_sl {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: -1px;
+    left: -8px;
+    width: 0;
+    background-color: rgba(255,50,50,1);
+    transform: skew(-15deg);
+    transition: all .2s ease;
+}
+
+.button_text {
+    position: relative;
+}
+
+.button:hover {
+    color: #0f1923;
+}
+
+.button:hover .button_sl {
+    width: calc(100% + 15px);
+}
+
+.button:hover .button_lg::after {
+    background-color: #fff;
+}
+
+.speed-modifiers {
+    display: none;
+    flex-direction: row; 
+    gap: 10px; 
+    position: fixed; 
+    bottom: 20px; 
+    right: 20px; 
+    z-index: 1000;
+}
+
+.speed-modifiers button {
+    padding: 10px 20px; 
+    font-size: 16px;
+    cursor: pointer; 
+    background-color: rgba(110,110,110,1); 
+    color: white;
+    border: none; 
+    border-radius: 5px; 
+    transition: background-color 0.3s; 
+}
+
+.speed-modifiers button:hover {
+    background-color: rgba(50,50,50,1);
+}
+
+#assistant {
+    position: fixed;
+    color: white;
+    bottom: 20px;
+    left: 20px;
+    width: 330px;
+    height: 300px;
+    background-color: rgba(110,110,110,1);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    overflow: auto;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    display: none;
+    flex-direction: column;
+}
+
+#userInput {
+    background: #242424;
+    padding: 10px;
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+#sendMessage {
+    font-family: Michroma;
+    align-self: flex-center;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+#sendMessage:hover {
+    background-color: #0056b3;
+}
+
+#response {
+    height: 200px;
+    overflow-y: auto;
+    overflow-wrap: break-word;
+    margin-top: 10px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+    white-space: pre-wrap;
+}
+
+#closeButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+
+#closeButton:hover {
+    color: red;
+}
+
+#showAssistant {
+    display: none;
+    flex-direction: row; 
+    gap: 10px; 
+    position: fixed; 
+    bottom: 20px; 
+    left: 20px; 
+    z-index: 1000;
+    padding: 10px 20px; 
+    font-size: 16px;
+    cursor: pointer; 
+    background-color: rgba(110,110,110,1); 
+    color: white;
+    border: none; 
+    border-radius: 5px; 
+    transition: background-color 0.3s; 
+}
+
+.popup {
+    max-width: 200px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+  }
+  .popup h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+  }
+  .popup p {
+    margin: 3px 0;
+  }
+
+  /* Ensure labels and date label don't block clicks */
+  .label,
+  .date-label {
+    pointer-events: none;
+  }
+
+  /* Styles for the planet popup */
+  .planet-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: 1px solid white;
+    border-radius: 10px;
+    z-index: 1000;
+    max-width: 300px;
+    text-align: left;
+    font-family: Poppins;
+  }
+
+  .planet-popup button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+  }
